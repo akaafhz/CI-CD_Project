@@ -37,3 +37,25 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# env
+.env
+.env.*
+
+# SSH private/public keys
+cicdProject
+cicdProject.pub
+github_actions_stb
+github_actions_stb.pub
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
