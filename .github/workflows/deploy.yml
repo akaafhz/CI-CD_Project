@@ -1,0 +1,47 @@
+name: Deploy Vue Website to STB
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Vue website
+        run: npm run build
+
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/stb_key
+          chmod 600 ~/.ssh/stb_key
+          ssh-keyscan -H ${{ secrets.STB_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy dist folder to STB
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/stb_key" \
+            dist/ ${{ secrets.STB_USER }}@${{ secrets.STB_HOST }}:${{ secrets.STB_PATH }}/
+
+      - name: Test and reload Nginx
+        run: |
+          ssh -i ~/.ssh/stb_key ${{ secrets.STB_USER }}@${{ secrets.STB_HOST }} "sudo nginx -t && sudo systemctl reload nginx"
